@@ -1,12 +1,11 @@
 ################################################
 import pygame
 import sys, time, random
+import astar
 from pyswip import Prolog, Functor, Variable, Query
 
 import pathlib
 current_path = str(pathlib.Path().resolve())
-
-#oi
 
 elapsed_time = 0
 auto_play_tempo = 0.5
@@ -155,6 +154,11 @@ def update_prolog():
     #print(mapa)
     #print(player_pos)
 
+
+def pathfinding(dst):
+
+    map = list(prolog.query("visitado(X, Y)"))
+    #astar.astar(map, , dst)
 
 def load():
     global sys_font, clock, img_wall, img_grass, img_start, img_finish, img_path

@@ -245,22 +245,57 @@ show_mem(_,0) :- energia(E), pontuacao(P), write('E: '), write(E), write('   P: 
 %apagar esta linha - apenas para demonstracao aleatoria
 %executa_acao(X) :- L=['virar_esquerda','virar_direita','andar','pegar'],random_between(1,4,I), nth1(I, L, X),!.
 
-posicao_segura(X, Y) :- \+ (memory(PX,NY,L),
-						(member(brisa,L);
-						member(palmas,L);
-						member(passos,L))).
+posicao_segura(PX, PY) :- visitado(PX, PY).
+posicao_segura(PX, PY) :- memory(PX, PY, []).
 
-executa_acao(X) :- posicao(PX,Y,_), memory(PX,Y,'O'), X = 'pegar',!.
+fronteira(Z) :- findall((X, Y), (\+ (visitado(X, Y)), posicao_segura(X, Y)), Z).
 
-executa_acao(X) :- posicao(PX,Y,norte),
-				   posicao_segura(PX, Y + 1),
-				   X = 'andar',!.
-%executa_acao(X) :- posicao(PX,Y,sul),
-%				   visitado(PX, Y - 1),
-%				   X = 'andar',!.
+posicao_valida(X, Y) :- map_size(SX, SY),
+					   	X >= 1,
+						X =< SX,
+					    Y >= 1,
+						Y =< SY.
+vizinho((X,Y), (XA, YA)) :- (XA = X + 1; XA = X - 1), Y = YA, posicao_valida(XA, YA).
+vizinho((X,Y), (XA, YA)) :- (YA = Y + 1; YA = Y - 1), X = XA, posicao_valida(XA, YA).
+
+prox_pos(X, Y, [H|(X,Y)]) :- \+ visitado(X, Y), posicao_segura(X, Y).
+prox_pos(X, Y, [H|T]) :- findall((XA, YA), vizinho((X,Y),(XA,XY)), Z)
+
+executa_acao(X) :- posicao(PX,Y,_), memory(PX,Y,[brilho]), X = 'pegar',!.
+
+executa_acao(X) :- posicao(PX,PY,norte),
+				   NY is PY + 1,
+				   posicao_segura(PX, NY),
+				   executa_acao(andar, X),!.
+executa_acao(X) :- posicao(PX,PY,sul),
+				   NY is PY - 1,
+				   posicao_segura(PX, NY),
+				   executa_acao(andar, X),!.
+executa_acao(X) :- posicao(PX,PY,leste),
+				   NX is PX + 1,
+				   posicao_segura(NX, PY),
+				   executa_acao(andar, X),!.
+executa_acao(X) :- posicao(PX,PY,oeste),
+				   NX is PX - 1,
+				   posicao_segura(NX, PY),
+				   executa_acao(andar, X),!.
 
 executa_acao(X) :- X = 'virar_direita',!.
 
+executa_acao(andar, X) :- posicao(PX, Y, norte),
+					   map_size(_, SY),
+					   Y < SY,
+					   X = 'andar',!.
+executa_acao(andar, X) :- posicao(PX, Y, sul),
+					   Y > 1,
+					   X = 'andar',!.
+executa_acao(andar, X) :- posicao(PX, Y, leste),
+					   	  map_size(SX, _),
+					      PX < SX,
+					      X = 'andar',!.
+executa_acao(andar, X) :- posicao(PX, Y, oeste),
+					   PX > 1,
+					   X = 'andar',!.
 
 
 %executa_acao(X) :- posicao(PX, PY, sul), memory(PX, PY, []), X = 'andar'.
@@ -271,8 +306,8 @@ executa_acao(X) :- X = 'virar_direita',!.
 %executa_acao(X) :- X = 'andar',!.
 
 %apagar linhas abaixo... sao exemplos de resposta
-executa_acao(andar) :- posicao(PX, PY, oeste), memory(PX - 1, PY, L), PX > 1, X = andar,!.
-executa_acao(andar) :- posicao(PX, PY, leste), memory(PX + 1, PY, L), PX < 3, X = andar,!.
+%executa_acao(andar) :- posicao(PX, PY, oeste), memory(PX - 1, PY, L), PX > 1, X = andar,!.
+%executa_acao(andar) :- posicao(PX, PY, leste), memory(PX + 1, PY, L), PX < 3, X = andar,!.
 %executa_acao(pegar) :- posicao(PX, PY,_), tem_ouro(PX, PY), !.
 %executa_acao(voltar) :- peguei_todos_ouros,!.
 
