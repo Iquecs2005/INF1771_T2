@@ -8,7 +8,7 @@
 :-dynamic tesouro/1.
 :-dynamic movimento/1.
 
-:-consult('mapa-dificil.pl').
+:-consult('mapa.pl').
 
 delete([], _, []).
 delete([Elem|Tail], Del, Result) :-
