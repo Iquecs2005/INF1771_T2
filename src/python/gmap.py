@@ -67,6 +67,7 @@ def decisao():
         if acao == 'andar':
             caminho.pop(0)
     if acao == 'venceu':
+        show_results()
         win = True
 
     return acao
@@ -170,6 +171,8 @@ def update_prolog():
     pontuacao = x.value
     pontuacao_query.closeQuery()
 
+    if player_pos[2] == 'morto':
+        show_results()
     #print(mapa)
     #print(player_pos)
 
@@ -446,6 +449,13 @@ def main_loop(screen):
 
         # Pygame atualiza o seu estado
         pygame.display.update() 
+
+
+def show_results():
+    print('pontuacao: ', pontuacao)
+    print('ouro coletado: ', list(prolog.query("tesouro(X)"))[0]['X'])
+    print('sobrevivencia: ', player_pos[2] != 'morto')
+    print('acoes executadas: ', list(prolog.query("movimento(X)"))[0]['X'])
 
 
 update_prolog()
