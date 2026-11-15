@@ -111,6 +111,11 @@ adjacente(X, Y) :- posicao(PX, Y, _), PX > 1, X is PX - 1.
 adjacente(X, Y) :- posicao(X, PY, _), map_size(_,MAX_Y),PY < MAX_Y, Y is PY + 1.  
 adjacente(X, Y) :- posicao(X, PY, _), PY > 1, Y is PY - 1.  
 
+adjacente(PX, PY, X, Y) :- map_size(MAX_X,_), PX < MAX_X, X is PX + 1, Y = PY.
+adjacente(PX, PY, X, Y) :- PX > 1, X is PX - 1, Y = PY.  
+adjacente(PX, PY, X, Y) :- map_size(_,MAX_Y), PY < MAX_Y, X = PX, Y is PY + 1.  
+adjacente(PX, PY, X, Y) :- PY > 1, X = PX, Y is PY - 1.  
+
 %cria lista com a adjacencias
 adjacentes(L) :- findall(Z,(adjacente(X,Y),tile(X,Y,Z)),L).
 
@@ -242,13 +247,33 @@ show_mem(_,0) :- energia(E), pontuacao(P), write('E: '), write(E), write('   P: 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+takeout(X,[X|R],R).
+takeout(X,[F|R],[F|S]) :- takeout(X,R,S).
+
 %apagar esta linha - apenas para demonstracao aleatoria
 %executa_acao(X) :- L=['virar_esquerda','virar_direita','andar','pegar'],random_between(1,4,I), nth1(I, L, X),!.
 
 posicao_segura(PX, PY) :- visitado(PX, PY).
 posicao_segura(PX, PY) :- memory(PX, PY, []).
+posicao_segura(PX, PY) :- \+ certeza(PX, PY), 
+						  memory(PX, PY, Perigo),
+						  findall((Z, W), (adjacente(PX, PY, X, Y), adjacente(X, Y, Z, W), memory(Z, W, Perigo), certeza(Z, W)), L),
+						  L \= [].
+
+posicao_vazia(X, Y) :- \+ (visitado(X, Y); posicao(X, Y, _)), posicao_segura(X, Y).
+posicao_vazia_mais_proxima(Inicio, Resultado) :- bfs([Inicio], [Inicio], Resultado).
+
+bfs([(X,Y)|_], _, (X,Y)) :- posicao_vazia(X,Y),!.
+bfs([(X,Y)|Resto], Visitados, Resultado) :- (visitado(X, Y); posicao(X,Y,_)),
+											findall((Z,W), (adjacente(X,Y,Z,W), \+ member((Z,W), Visitados)), Novos),
+    										append(Resto, Novos, NovaFila),
+    										append(Visitados, Novos, NovosVisitados),
+    										bfs(NovaFila, NovosVisitados, Resultado).  
+bfs([_|Resto], Visitados, Resultado) :- bfs(Resto, Visitados, Resultado).											
 
 fronteira(Z) :- findall((X, Y), (\+ (visitado(X, Y)), posicao_segura(X, Y)), Z).
+
+
 
 posicao_valida(X, Y) :- map_size(SX, SY),
 					   	X >= 1,
@@ -262,6 +287,43 @@ prox_pos(X, Y, [H|(X,Y)]) :- \+ visitado(X, Y), posicao_segura(X, Y).
 prox_pos(X, Y, [H|T]) :- findall((XA, YA), vizinho((X,Y),(XA,XY)), Z)
 
 executa_acao(X) :- posicao(PX,Y,_), memory(PX,Y,[brilho]), X = 'pegar',!.
+
+
+
+posicao_a_frente(X, Y, norte, X, FY) :- FY is Y + 1,
+										posicao_valida(X, FY), !.
+posicao_a_frente(X, Y, sul, X, FY) :- FY is Y - 1,
+									  posicao_valida(X, FY), !.
+posicao_a_frente(X, Y, leste, FX, Y) :- FX is X + 1,
+										posicao_valida(FX, Y), !.
+posicao_a_frente(X, Y, oeste, FX, Y) :- FX is X - 1,
+										posicao_valida(FX, Y), !.
+
+dir_a_direita(norte, leste).
+dir_a_direita(leste, sul).
+dir_a_direita(sul, oeste).
+dir_a_direita(oeste, norte).
+
+posicao_a_frente_segura(X, Y, DIR, FX, FY) :- posicao_a_frente(X, Y, DIR, FX, FY),
+						   			  		  posicao_segura(FX, FY), !.
+
+executa_acao(andar) :- posicao(X, Y, Dir),
+					   posicao_a_frente_segura(X, Y, Dir, FX, FY),
+				   	   \+ visitado(FX, FY), !.
+executa_acao(virar_direita) :- posicao(X, Y, Dir),
+					   		   dir_a_direita(Dir, NDir),
+					   		   posicao_a_frente_segura(X, Y, NDir, FX, FY),
+				   	   		   \+ visitado(FX, FY), !.
+executa_acao(virar_esquerda) :- posicao(X, Y, Dir),
+					   		   dir_a_direita(NDir, Dir),
+					   		   posicao_a_frente_segura(X, Y, NDir, FX, FY),
+				   	   		   \+ visitado(FX, FY), !.
+executa_acao(virar_direita) :- posicao(X, Y, Dir),
+					   		   dir_a_direita(Dir, NDir),
+							   dir_a_direita(NDir, MDir),
+					   		   posicao_a_frente_segura(X, Y, MDir, FX, FY),
+				   	   		   \+ visitado(FX, FY), !.
+
 
 executa_acao(X) :- posicao(PX,PY,norte),
 				   NY is PY + 1,
