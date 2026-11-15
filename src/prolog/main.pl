@@ -247,9 +247,6 @@ show_mem(_,0) :- energia(E), pontuacao(P), write('E: '), write(E), write('   P: 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-takeout(X,[X|R],R).
-takeout(X,[F|R],[F|S]) :- takeout(X,R,S).
-
 %apagar esta linha - apenas para demonstracao aleatoria
 %executa_acao(X) :- L=['virar_esquerda','virar_direita','andar','pegar'],random_between(1,4,I), nth1(I, L, X),!.
 
@@ -324,6 +321,20 @@ executa_acao(virar_direita) :- posicao(X, Y, Dir),
 					   		   posicao_a_frente_segura(X, Y, MDir, FX, FY),
 				   	   		   \+ visitado(FX, FY), !.
 
+executa_acao(procura) :- posicao_vazia(X, Y).
+
+go_to(PX, PY, andar) :- posicao(X, Y, Dir),
+						posicao_a_frente(X, Y, Dir, PX, PY), !.
+go_to(PX, PY, virar_direita) :- posicao(X, Y, Dir),
+								dir_a_direita(Dir, NDir),
+								posicao_a_frente(X, Y, NDir, PX, PY), !.
+go_to(PX, PY, virar_esquerda) :- posicao(X, Y, Dir),
+								dir_a_direita(NDir, Dir),
+								posicao_a_frente(X, Y, NDir, PX, PY), !.
+go_to(PX, PY, virar_direita) :- posicao(X, Y, Dir),
+								dir_a_direita(Dir, NDir),
+								dir_a_direita(NDir, MDir),
+								posicao_a_frente(X, Y, MDir, PX, PY), !.
 
 executa_acao(X) :- posicao(PX,PY,norte),
 				   NY is PY + 1,

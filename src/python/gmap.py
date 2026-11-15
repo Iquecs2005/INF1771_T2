@@ -1,7 +1,7 @@
 ################################################
 import pygame
 import sys, time, random
-import astar
+from astar import bfs
 from pyswip import Prolog, Functor, Variable, Query
 
 import pathlib
@@ -45,6 +45,7 @@ prolog = Prolog()
 prolog.consult(pl_file)
 
 last_action = ""
+caminho = []
 
 def decisao():
 
@@ -59,7 +60,9 @@ def decisao():
 
 def exec_prolog(a):
     global last_action
-    if a != "":
+    if a == "procura":
+        find_safe()
+    elif a != "":
         list(prolog.query(a))
     last_action = a
 
@@ -154,6 +157,26 @@ def update_prolog():
     #print(mapa)
     #print(player_pos)
 
+
+def find_safe():
+    global player_pos, caminho
+
+    posicoes = bfs(is_safe, player_pos[:2], is_dst)
+    caminho = posicoes[1:]
+
+
+def is_safe(pos) -> bool:
+    query_text = f"posicao_segura({pos[0]}, {pos[1]})"
+    query = list(prolog.query(query_text))
+    if pos == (3, 1):
+        print(query)
+    return {} in query
+
+
+def is_dst(pos) -> bool:
+    query_text = f"posicao_vazia({pos[0]}, {pos[1]})"
+    query = list(prolog.query(query_text))
+    return query == [{}]
 
 def pathfinding(dst):
 
@@ -261,14 +284,22 @@ def load():
 
 def update(dt, screen):
     
-    global elapsed_time
+    global elapsed_time, caminho
     
     elapsed_time += dt
     
     if (elapsed_time / 1000) > auto_play_tempo:
         
         if auto_play and player_pos[2] != 'morto':
-            exec_prolog(decisao())
+            if caminho != []:
+                posicao_atual = caminho[0]
+                query_text = f"go_to({posicao_atual[0]}, {posicao_atual[1]}, X)"
+                query = list(prolog.query(query_text))
+                exec_prolog(query[0]['X'])
+                if query[0]['X'] == 'andar':
+                    caminho.pop(0)
+            else:
+                exec_prolog(decisao())
             update_prolog()
        
         elapsed_time = 0

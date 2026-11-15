@@ -8,20 +8,22 @@ def manhattan_distance(origin: tuple[int, int], dst: tuple[int, int]) -> int:
     return distance
 
 
-def get_available_neighbors(map, pos : tuple[int, int]) -> list:
+def get_available_neighbors(map_function : callable, pos : tuple[int, int]) -> list:
     north_neighbor = (pos[0], pos[1] + 1)
     south_neighbor = (pos[0], pos[1] - 1)
     east_neighbor = (pos[0] + 1, pos[1])
     west_neighbor = (pos[0] - 1, pos[1])
 
     valid_neighbors = []
-    if north_neighbor in map:
+    if map_function(north_neighbor):
         valid_neighbors.append(north_neighbor)
-    if south_neighbor in map:
+    if map_function(south_neighbor):
         valid_neighbors.append(south_neighbor)
-    if east_neighbor in map:
+    if map_function(east_neighbor):
         valid_neighbors.append(east_neighbor)
-    if west_neighbor in map:
+    print(west_neighbor)
+    if map_function(west_neighbor):
+        print("Yay")
         valid_neighbors.append(west_neighbor)
 
     return valid_neighbors
@@ -50,6 +52,42 @@ def reconstruct_path(dst: TreeNode) -> list[tuple[int, int]]:
 
 #     total_path += pathfinder(map, curr_pos, map_end_pos())[0]
 #     return total_path
+
+def bfs(map_function : callable, origin: tuple[int, int], dst_function : callable):
+    origin_node = TreeNode(origin, 0)
+
+    border = [origin_node]
+    visited = []
+
+    while border:
+        current_node = border.pop(0)
+        current_cord = current_node.get_coord()
+
+        print(current_cord)
+
+        if current_cord in visited:
+            continue
+
+        print(current_cord)
+        if dst_function(current_cord):
+            return reconstruct_path(current_node)
+
+        visited.append(current_cord)
+
+        neighbors = get_available_neighbors(map_function, current_cord)
+        for neighbor in neighbors:
+            if neighbor in visited:
+                continue
+
+            neighbor_cost = 1 + current_node.get_priority()
+            neighbor_parent = current_node
+
+            neighbor_node = TreeNode(neighbor, neighbor_cost)
+            neighbor_node.set_parent(neighbor_parent)
+
+            border.append(neighbor_node)
+
+    return None
 
 
 def astar(map, origin: tuple[int, int], dst: tuple[int, int]) -> tuple[list, int]:
