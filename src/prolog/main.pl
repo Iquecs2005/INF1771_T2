@@ -6,7 +6,7 @@
 :-dynamic energia/1.
 :-dynamic pontuacao/1.
 
-:-consult('mapa.pl').
+:-consult('mapa-dificil.pl').
 
 delete([], _, []).
 delete([Elem|Tail], Del, Result) :-
@@ -134,7 +134,7 @@ observacao_adj(passos,L) :- member('d',L).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %consulta e processa observações
-atualiza_obs:-adj_cand_obs(LP), observacoes(LO), iter_pos_list(LP,LO), observacao_certeza, observacao_vazia.
+atualiza_obs:-adj_cand_obs(LP), observacoes(LO), iter_pos_list(LP,LO), observacao_certeza, observacao_vazia, semi_certeza.
 
 %adjacencias candidatas p/ a observacao (aquelas não visitadas)
 adj_cand_obs(L) :- findall((X,Y), (adjacente(X, Y), \+visitado(X,Y)), L).
@@ -257,21 +257,26 @@ adjacente_a_perigo(X, Y, Exc) :- findall((Z, W), (adjacente(X, Y, Z, W),
 								  P \= [],
 								  P \= Exc.
 
-semi_certeza(X, Y) :- memory(X, Y, L),
-				 L \= [],
-				 findall((Z, W), (adjacente(X, Y, Z, W), \+ adjacente_a_perigo(Z, W, [(X, Y)])), P),
-				 P \= [].
+semi_certeza :- visitado(X, Y),
+			    findall((Z, W), (adjacente(X, Y, Z, W), memory(Z, W, L), L \= []), P),
+				P = [(K, L)],
+				assert(certeza(K,L)).
+
 
 posicao_segura(PX, PY) :- visitado(PX, PY).
 posicao_segura(PX, PY) :- memory(PX, PY, []).
 posicao_segura(PX, PY) :- memory(PX, PY, Perigo),
 						  \+ certeza(PX, PY), 
 						  findall((Z, W), (adjacente(PX, PY, X, Y), adjacente(X, Y, Z, W), memory(Z, W, Perigo), certeza(Z, W)), L),
-						  L \= [].
+						  L \= [],
+						  retract(memory(PX, PY, Perigo)),
+						  assert(memory(PX, PY, [])).
 posicao_segura(PX, PY) :- memory(PX, PY, Perigo),
 						  \+ certeza(PX, PY), 
-						  findall((Z, W), (adjacente(PX, PY, X, Y), adjacente(X, Y, Z, W), memory(Z, W, Perigo), semi_certeza(Z, W)), L),
-						  L \= [].
+						  findall((Z, W), (adjacente(PX, PY, X, Y), adjacente(X, Y, Z, W), certeza(Z, W), memory(Z, W, P), P \= []), L),
+						  forall(member(Pe, Perigo), (member((Z, W), L), memory(Z, W, [Pe]))),
+						  retract(memory(PX, PY, Perigo)),
+						  assert(memory(PX, PY, [])).
 
 posicao_vazia(X, Y) :- posicao_segura(X, Y), \+ (visitado(X, Y); posicao(X, Y, _)).								
 

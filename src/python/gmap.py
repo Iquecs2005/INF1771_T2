@@ -8,7 +8,7 @@ import pathlib
 current_path = str(pathlib.Path().resolve())
 
 elapsed_time = 0
-auto_play_tempo = 0.5
+auto_play_tempo = 0.05
 auto_play = True # desligar para controlar manualmente
 show_map = False
 
@@ -162,21 +162,20 @@ def find_safe():
     global player_pos, caminho
 
     posicoes = bfs(is_safe, player_pos[:2], is_dst)
-    caminho = posicoes[1:]
+    if posicoes != None:
+        caminho = posicoes[1:]
 
 
 def is_safe(pos) -> bool:
     query_text = f"posicao_segura({pos[0]}, {pos[1]})"
     query = list(prolog.query(query_text))
-    if pos == (3, 1):
-        print(query)
     return {} in query
 
 
 def is_dst(pos) -> bool:
     query_text = f"posicao_vazia({pos[0]}, {pos[1]})"
     query = list(prolog.query(query_text))
-    return query == [{}]
+    return {} in query
 
 def pathfinding(dst):
 
