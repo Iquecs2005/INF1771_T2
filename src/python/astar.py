@@ -57,8 +57,6 @@ def bfs(map_function : callable, origin: tuple[int, int], dst_function : callabl
     border = [origin_node]
     visited = []
 
-    print("bfs")
-
     while border:
         current_node = border.pop(0)
         current_cord = current_node.get_coord()
