@@ -252,12 +252,12 @@ show_mem(_,0) :- energia(E), pontuacao(P), write('E: '), write(E), write('   P: 
 
 posicao_segura(PX, PY) :- visitado(PX, PY).
 posicao_segura(PX, PY) :- memory(PX, PY, []).
-posicao_segura(PX, PY) :- \+ certeza(PX, PY), 
-						  memory(PX, PY, Perigo),
+posicao_segura(PX, PY) :- memory(PX, PY, Perigo),
+						  \+ certeza(PX, PY), 
 						  findall((Z, W), (adjacente(PX, PY, X, Y), adjacente(X, Y, Z, W), memory(Z, W, Perigo), certeza(Z, W)), L),
 						  L \= [].
 
-posicao_vazia(X, Y) :- \+ (visitado(X, Y); posicao(X, Y, _)), posicao_segura(X, Y).
+posicao_vazia(X, Y) :- posicao_segura(X, Y), \+ (visitado(X, Y); posicao(X, Y, _)).
 posicao_vazia_mais_proxima(Inicio, Resultado) :- bfs([Inicio], [Inicio], Resultado).
 
 bfs([(X,Y)|_], _, (X,Y)) :- posicao_vazia(X,Y),!.
@@ -281,7 +281,7 @@ vizinho((X,Y), (XA, YA)) :- (XA = X + 1; XA = X - 1), Y = YA, posicao_valida(XA,
 vizinho((X,Y), (XA, YA)) :- (YA = Y + 1; YA = Y - 1), X = XA, posicao_valida(XA, YA).
 
 prox_pos(X, Y, [H|(X,Y)]) :- \+ visitado(X, Y), posicao_segura(X, Y).
-prox_pos(X, Y, [H|T]) :- findall((XA, YA), vizinho((X,Y),(XA,XY)), Z)
+prox_pos(X, Y, [H|T]) :- findall((XA, YA), vizinho((X,Y),(XA,XY)), Z).
 
 executa_acao(X) :- posicao(PX,Y,_), memory(PX,Y,[brilho]), X = 'pegar',!.
 
