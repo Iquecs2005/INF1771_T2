@@ -1,7 +1,7 @@
 ################################################
 import pygame
 import sys, time, random
-from astar import bfs
+from astar import bfs, astar
 from pyswip import Prolog, Functor, Variable, Query
 
 import pathlib
@@ -11,6 +11,7 @@ elapsed_time = 0
 auto_play_tempo = 0.05
 auto_play = True # desligar para controlar manualmente
 show_map = False
+win = False
 
 scale = 60
 size_x = 12
@@ -49,18 +50,34 @@ caminho = []
 
 def decisao():
 
+    global caminho, win
+
     acao = ""    
     
     acoes = list(prolog.query("executa_acao(X)"))
     if len(acoes) > 0:
         acao = acoes[0]['X']
+    if acao == 'voltar':
+        position = list(prolog.query("posicao(X, Y, _)"))
+        caminho = pathfinding((position[0]['X'], position[0]['Y']))[1:]
+        posicao_atual = caminho[0]
+        query_text = f"go_to({posicao_atual[0]}, {posicao_atual[1]}, X)"
+        query = list(prolog.query(query_text))
+        acao = query[0]['X']
+        if acao == 'andar':
+            caminho.pop(0)
+    if acao == 'venceu':
+        show_results()
+        win = True
 
     return acao
 
 
 def exec_prolog(a):
     global last_action
-    if a == "procura":
+    if a == "venceu":
+        return
+    elif a == "procura":
         find_safe()
     elif a != "":
         list(prolog.query(a))
@@ -154,6 +171,8 @@ def update_prolog():
     pontuacao = x.value
     pontuacao_query.closeQuery()
 
+    if player_pos[2] == 'morto':
+        show_results()
     #print(mapa)
     #print(player_pos)
 
@@ -177,10 +196,10 @@ def is_dst(pos) -> bool:
     query = list(prolog.query(query_text))
     return {} in query
 
-def pathfinding(dst):
+def pathfinding(origin: tuple[int, int]) -> list[tuple[int, int]]:
 
-    map = list(prolog.query("visitado(X, Y)"))
-    #astar.astar(map, , dst)
+    result = astar(is_safe, origin, (1, 1))
+    return result
 
 def load():
     global sys_font, clock, img_wall, img_grass, img_start, img_finish, img_path
@@ -289,7 +308,7 @@ def update(dt, screen):
     
     if (elapsed_time / 1000) > auto_play_tempo:
         
-        if auto_play and player_pos[2] != 'morto':
+        if auto_play and not win and player_pos[2] != 'morto':
             if caminho != []:
                 posicao_atual = caminho[0]
                 query_text = f"go_to({posicao_atual[0]}, {posicao_atual[1]}, X)"
@@ -311,7 +330,7 @@ def key_pressed(event):
     #leitura do teclado
     if event.type == pygame.KEYDOWN:
         
-        if not auto_play and player_pos[2] != 'morto':
+        if not auto_play and not win and player_pos[2] != 'morto':
             if event.key == pygame.K_LEFT: #tecla esquerda
                 exec_prolog("virar_esquerda")
                 update_prolog()
@@ -431,6 +450,13 @@ def main_loop(screen):
 
         # Pygame atualiza o seu estado
         pygame.display.update() 
+
+
+def show_results():
+    print('pontuacao: ', pontuacao)
+    print('ouro coletado: ', list(prolog.query("tesouro(X)"))[0]['X'])
+    print('sobrevivencia: ', player_pos[2] != 'morto')
+    print('acoes executadas: ', list(prolog.query("movimento(X)"))[0]['X'])
 
 
 update_prolog()
