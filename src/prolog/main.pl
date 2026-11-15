@@ -8,7 +8,7 @@
 :-dynamic tesouro/1.
 :-dynamic movimento/1.
 
-:-consult('mapa.pl').
+:-consult('mapa-dificil.pl').
 
 delete([], _, []).
 delete([Elem|Tail], Del, Result) :-
@@ -260,21 +260,10 @@ show_mem(_,0) :- energia(E), pontuacao(P), write('E: '), write(E), write('   P: 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%apagar esta linha - apenas para demonstracao aleatoria
-%executa_acao(X) :- L=['virar_esquerda','virar_direita','andar','pegar'],random_between(1,4,I), nth1(I, L, X),!.
-
-adjacente_a_perigo(X, Y, Exc) :- findall((Z, W), (adjacente(X, Y, Z, W),
-											((memory(Z, W, L), L \= []);
-											\+ memory(Z, W, L))
-									), P),
-								  P \= [],
-								  P \= Exc.
-
 semi_certeza :- visitado(X, Y),
 			    findall((Z, W), (adjacente(X, Y, Z, W), memory(Z, W, L), L \= []), P),
 				P = [(K, L)],
 				assert(certeza(K,L)).
-
 
 posicao_segura(PX, PY) :- visitado(PX, PY).
 posicao_segura(PX, PY) :- memory(PX, PY, []).
