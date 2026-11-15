@@ -5,6 +5,7 @@
 :-dynamic certeza/2.
 :-dynamic energia/1.
 :-dynamic pontuacao/1.
+:-dynamic tesouro/1.
 
 :-consult('mapa.pl').
 
@@ -23,9 +24,11 @@ reset_game :- retractall(memory(_,_,_)),
 			retractall(certeza(_,_)),
 			retractall(energia(_)),
 			retractall(pontuacao(_)),
+			retractall(tesouro(_)),
 			retractall(posicao(_,_,_)),
 			assert(energia(100)),
 			assert(pontuacao(0)),
+			assert(tesouro(0)),
 			assert(posicao(1,1, norte)).
 
 
@@ -45,6 +48,9 @@ atualiza_energia(N):- energia(E), retract(energia(E)), NE is E + N,
 					 (NE >100, assert(energia(100)),!);
 					  (NE >0,assert(energia(NE)),!)
 					 ).
+
+%quantidade de tesouros coletados
+atualiza_tesouro(X):- tesouro(T), retract(tesouro(T)), NT is T + X, assert(tesouro(NT)),!.
 
 %verifica situacao da nova posicao e atualiza energia e pontos
 verifica_player :- posicao(X,Y,_), tile(X,Y,'P'), atualiza_energia(-100), atualiza_pontuacao(-1000),!.
@@ -97,7 +103,7 @@ andar :- posicao(X,Y,P), P = oeste,  X > 1, XX is X - 1,
 		 ((retract(visitado(X,Y)), assert(visitado(X,Y))); assert(visitado(X,Y))),atualiza_pontuacao(-1),!.
 		 
 %pegar	
-pegar :- posicao(X,Y,_), tile(X,Y,'O'), retract(tile(X,Y,'O')), assert(tile(X,Y,'')), atualiza_pontuacao(-5), atualiza_pontuacao(500),set_real(X,Y),!. 
+pegar :- posicao(X,Y,_), tile(X,Y,'O'), retract(tile(X,Y,'O')), assert(tile(X,Y,'')), atualiza_pontuacao(-5), atualiza_pontuacao(500), atualiza_tesouro(1), set_real(X,Y),!. 
 pegar :- posicao(X,Y,_), tile(X,Y,'U'), retract(tile(X,Y,'U')), assert(tile(X,Y,'')), atualiza_pontuacao(-5), atualiza_energia(50),set_real(X,Y),!. 
 pegar :- atualiza_pontuacao(-5),!.
 
@@ -282,6 +288,9 @@ vizinho((X,Y), (XA, YA)) :- (YA = Y + 1; YA = Y - 1), X = XA, posicao_valida(XA,
 
 prox_pos(X, Y, [H|(X,Y)]) :- \+ visitado(X, Y), posicao_segura(X, Y).
 prox_pos(X, Y, [H|T]) :- findall((XA, YA), vizinho((X,Y),(XA,XY)), Z).
+
+executa_acao(X) :- tesouro(3), posicao(1, 1, _), X = 'venceu',!.
+executa_acao(X) :- tesouro(3), X = 'voltar',!.
 
 executa_acao(X) :- posicao(PX,Y,_), memory(PX,Y,[brilho]), X = 'pegar',!.
 
