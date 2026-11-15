@@ -5,8 +5,29 @@ Warning - swipl module is currently compatible with swi-prolog 8.4.3 download he
 Mapa Fácil
 ![Mapa Fácil](mapa-facil.png)
 
+Resultado:
+
+Pontuacao:  1278
+Ouro coletado:  3
+Sobrevivência:  True
+Ações executadas:  210
+
 Mapa Médio
 ![Mapa Médio](mapa-medio.png)
 
+Resultado:
+
+Pontuacao: 1168
+Ouro coletado: 3
+Sobrevivência: True
+Ações executadas: 320
+
 Mapa Difícil
 ![Mapa Difícil](mapa-dificil.png)
+
+Resultado:
+
+Pontuacao: 1180
+Ouro coletado: 3
+Sobrevivência: True
+Ações executadas: 308

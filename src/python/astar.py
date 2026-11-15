@@ -21,9 +21,7 @@ def get_available_neighbors(map_function : callable, pos : tuple[int, int]) -> l
         valid_neighbors.append(south_neighbor)
     if map_function(east_neighbor):
         valid_neighbors.append(east_neighbor)
-    print(west_neighbor)
     if map_function(west_neighbor):
-        print("Yay")
         valid_neighbors.append(west_neighbor)
 
     return valid_neighbors
@@ -63,12 +61,9 @@ def bfs(map_function : callable, origin: tuple[int, int], dst_function : callabl
         current_node = border.pop(0)
         current_cord = current_node.get_coord()
 
-        print(current_cord)
-
         if current_cord in visited:
             continue
 
-        print(current_cord)
         if dst_function(current_cord):
             return reconstruct_path(current_node)
 

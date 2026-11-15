@@ -5,8 +5,10 @@
 :-dynamic certeza/2.
 :-dynamic energia/1.
 :-dynamic pontuacao/1.
+:-dynamic tesouro/1.
+:-dynamic movimento/1.
 
-:-consult('mapa.pl').
+:-consult('mapa-dificil.pl').
 
 delete([], _, []).
 delete([Elem|Tail], Del, Result) :-
@@ -23,9 +25,13 @@ reset_game :- retractall(memory(_,_,_)),
 			retractall(certeza(_,_)),
 			retractall(energia(_)),
 			retractall(pontuacao(_)),
+			retractall(tesouro(_)),
+			retractall(movimento(_)),
 			retractall(posicao(_,_,_)),
 			assert(energia(100)),
 			assert(pontuacao(0)),
+			assert(tesouro(0)),
+			assert(movimento(0)),
 			assert(posicao(1,1, norte)).
 
 
@@ -41,13 +47,20 @@ atualiza_pontuacao(X):- pontuacao(P), retract(pontuacao(P)), NP is P + X, assert
 %atualiza energia
 atualiza_energia(N):- energia(E), retract(energia(E)), NE is E + N, 
 					(
-					 (NE =<0, assert(energia(0)),posicao(X,Y,_),retract(posicao(_,_,_)), assert(posicao(X,Y,morto)),!);
+					 (NE =<0, assert(energia(0)),posicao(X,Y,_),retract(posicao(_,_,_)), assert(posicao(X,Y,morto)), atualiza_pontuacao(-1000),!);
 					 (NE >100, assert(energia(100)),!);
 					  (NE >0,assert(energia(NE)),!)
 					 ).
 
+
+%atualiza tesouro
+atualiza_tesouro(X):- tesouro(T), retract(tesouro(T)), NT is T + X, assert(tesouro(NT)),!.
+
+%atualiza movimento
+atualiza_movimento(X):- movimento(M), retract(movimento(M)), NM is M + X, assert(movimento(NM)),!.
+
 %verifica situacao da nova posicao e atualiza energia e pontos
-verifica_player :- posicao(X,Y,_), tile(X,Y,'P'), atualiza_energia(-100), atualiza_pontuacao(-1000),!.
+verifica_player :- posicao(X,Y,_), tile(X,Y,'P'), atualiza_energia(-100),!.
 verifica_player :- posicao(X,Y,_), tile(X,Y,'D'), random_between(-80,-50,D), atualiza_energia(D),!.
 verifica_player :- posicao(X,Y,_), tile(X,Y,'d'), random_between(-50,-25,D), atualiza_energia(D),!.
 verifica_player :- posicao(X,Y,Z), tile(X,Y,'T'), 
@@ -60,46 +73,46 @@ verifica_player :- true.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %virar direita
-virar_direita :- posicao(X,Y, norte), retract(posicao(_,_,_)), assert(posicao(X, Y, leste)),atualiza_pontuacao(-1),!.
-virar_direita :- posicao(X,Y, oeste), retract(posicao(_,_,_)), assert(posicao(X, Y, norte)),atualiza_pontuacao(-1),!.
-virar_direita :- posicao(X,Y, sul), retract(posicao(_,_,_)), assert(posicao(X, Y, oeste)),atualiza_pontuacao(-1),!.
-virar_direita :- posicao(X,Y, leste), retract(posicao(_,_,_)), assert(posicao(X, Y, sul)),atualiza_pontuacao(-1),!.
+virar_direita :- posicao(X,Y, norte), retract(posicao(_,_,_)), assert(posicao(X, Y, leste)),atualiza_pontuacao(-1),atualiza_movimento(1),!.
+virar_direita :- posicao(X,Y, oeste), retract(posicao(_,_,_)), assert(posicao(X, Y, norte)),atualiza_pontuacao(-1),atualiza_movimento(1),!.
+virar_direita :- posicao(X,Y, sul), retract(posicao(_,_,_)), assert(posicao(X, Y, oeste)),atualiza_pontuacao(-1),atualiza_movimento(1),!.
+virar_direita :- posicao(X,Y, leste), retract(posicao(_,_,_)), assert(posicao(X, Y, sul)),atualiza_pontuacao(-1),atualiza_movimento(1),!.
 
 %virar esquerda
-virar_esquerda :- posicao(X,Y, norte), retract(posicao(_,_,_)), assert(posicao(X, Y, oeste)),atualiza_pontuacao(-1),!.
-virar_esquerda :- posicao(X,Y, oeste), retract(posicao(_,_,_)), assert(posicao(X, Y, sul)),atualiza_pontuacao(-1),!.
-virar_esquerda :- posicao(X,Y, sul), retract(posicao(_,_,_)), assert(posicao(X, Y, leste)),atualiza_pontuacao(-1),!.
-virar_esquerda :- posicao(X,Y, leste), retract(posicao(_,_,_)), assert(posicao(X, Y, norte)),atualiza_pontuacao(-1),!.
+virar_esquerda :- posicao(X,Y, norte), retract(posicao(_,_,_)), assert(posicao(X, Y, oeste)),atualiza_pontuacao(-1),atualiza_movimento(1),!.
+virar_esquerda :- posicao(X,Y, oeste), retract(posicao(_,_,_)), assert(posicao(X, Y, sul)),atualiza_pontuacao(-1),atualiza_movimento(1),!.
+virar_esquerda :- posicao(X,Y, sul), retract(posicao(_,_,_)), assert(posicao(X, Y, leste)),atualiza_pontuacao(-1),atualiza_movimento(1),!.
+virar_esquerda :- posicao(X,Y, leste), retract(posicao(_,_,_)), assert(posicao(X, Y, norte)),atualiza_pontuacao(-1),atualiza_movimento(1),!.
 
 %andar
 andar :- posicao(X,Y,P), P = norte, map_size(_,MAX_Y), Y < MAX_Y, YY is Y + 1, 
          retract(posicao(X,Y,_)), assert(posicao(X, YY, P)), 
 		 %((retract(certeza(X,YY)), assert(certeza(X,YY))); assert(certeza(X,YY))),
 		 set_real(X,YY),
-		 ((retract(visitado(X,Y)), assert(visitado(X,Y))); assert(visitado(X,Y))),atualiza_pontuacao(-1),!.
+		 ((retract(visitado(X,Y)), assert(visitado(X,Y))); assert(visitado(X,Y))),atualiza_pontuacao(-1),atualiza_movimento(1),!.
 		 
 andar :- posicao(X,Y,P), P = sul,  Y > 1, YY is Y - 1, 
          retract(posicao(X,Y,_)), assert(posicao(X, YY, P)), 
 		 %((retract(certeza(X,YY)), assert(certeza(X,YY))); assert(certeza(X,YY))),
 		 set_real(X,YY),
-		 ((retract(visitado(X,Y)), assert(visitado(X,Y))); assert(visitado(X,Y))),atualiza_pontuacao(-1),!.
+		 ((retract(visitado(X,Y)), assert(visitado(X,Y))); assert(visitado(X,Y))),atualiza_pontuacao(-1),atualiza_movimento(1),!.
 
 andar :- posicao(X,Y,P), P = leste, map_size(MAX_X,_), X < MAX_X, XX is X + 1, 
          retract(posicao(X,Y,_)), assert(posicao(XX, Y, P)), 
 		 %((retract(certeza(XX,Y)), assert(certeza(XX,Y))); assert(certeza(XX,Y))),
 		 set_real(XX,Y),
-		 ((retract(visitado(X,Y)), assert(visitado(X,Y))); assert(visitado(X,Y))),atualiza_pontuacao(-1),!.
+		 ((retract(visitado(X,Y)), assert(visitado(X,Y))); assert(visitado(X,Y))),atualiza_pontuacao(-1),atualiza_movimento(1),!.
 
 andar :- posicao(X,Y,P), P = oeste,  X > 1, XX is X - 1, 
          retract(posicao(X,Y,_)), assert(posicao(XX, Y, P)), 
 		 %((retract(certeza(XX,Y)), assert(certeza(XX,Y))); assert(certeza(XX,Y))),
 		 set_real(XX,Y),
-		 ((retract(visitado(X,Y)), assert(visitado(X,Y))); assert(visitado(X,Y))),atualiza_pontuacao(-1),!.
+		 ((retract(visitado(X,Y)), assert(visitado(X,Y))); assert(visitado(X,Y))),atualiza_pontuacao(-1),atualiza_movimento(1),!.
 		 
 %pegar	
-pegar :- posicao(X,Y,_), tile(X,Y,'O'), retract(tile(X,Y,'O')), assert(tile(X,Y,'')), atualiza_pontuacao(-5), atualiza_pontuacao(500),set_real(X,Y),!. 
-pegar :- posicao(X,Y,_), tile(X,Y,'U'), retract(tile(X,Y,'U')), assert(tile(X,Y,'')), atualiza_pontuacao(-5), atualiza_energia(50),set_real(X,Y),!. 
-pegar :- atualiza_pontuacao(-5),!.
+pegar :- posicao(X,Y,_), tile(X,Y,'O'), retract(tile(X,Y,'O')), assert(tile(X,Y,'')), atualiza_pontuacao(-5), atualiza_pontuacao(500), atualiza_tesouro(1), set_real(X,Y),atualiza_movimento(1),!. 
+pegar :- posicao(X,Y,_), tile(X,Y,'U'), retract(tile(X,Y,'U')), assert(tile(X,Y,'')), atualiza_pontuacao(-5), atualiza_energia(50),set_real(X,Y),atualiza_movimento(1),!. 
+pegar :- atualiza_pontuacao(-5),atualiza_movimento(1),!.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Funcoes Auxiliares de navegação e observação
@@ -134,7 +147,7 @@ observacao_adj(passos,L) :- member('d',L).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %consulta e processa observações
-atualiza_obs:-adj_cand_obs(LP), observacoes(LO), iter_pos_list(LP,LO), observacao_certeza, observacao_vazia.
+atualiza_obs:-adj_cand_obs(LP), observacoes(LO), iter_pos_list(LP,LO), observacao_certeza, observacao_vazia, semi_certeza.
 
 %adjacencias candidatas p/ a observacao (aquelas não visitadas)
 adj_cand_obs(L) :- findall((X,Y), (adjacente(X, Y), \+visitado(X,Y)), L).
@@ -250,42 +263,41 @@ show_mem(_,0) :- energia(E), pontuacao(P), write('E: '), write(E), write('   P: 
 %apagar esta linha - apenas para demonstracao aleatoria
 %executa_acao(X) :- L=['virar_esquerda','virar_direita','andar','pegar'],random_between(1,4,I), nth1(I, L, X),!.
 
+adjacente_a_perigo(X, Y, Exc) :- findall((Z, W), (adjacente(X, Y, Z, W),
+											((memory(Z, W, L), L \= []);
+											\+ memory(Z, W, L))
+									), P),
+								  P \= [],
+								  P \= Exc.
+
+semi_certeza :- visitado(X, Y),
+			    findall((Z, W), (adjacente(X, Y, Z, W), memory(Z, W, L), L \= []), P),
+				P = [(K, L)],
+				assert(certeza(K,L)).
+
+
 posicao_segura(PX, PY) :- visitado(PX, PY).
 posicao_segura(PX, PY) :- memory(PX, PY, []).
 posicao_segura(PX, PY) :- memory(PX, PY, Perigo),
 						  \+ certeza(PX, PY), 
 						  findall((Z, W), (adjacente(PX, PY, X, Y), adjacente(X, Y, Z, W), memory(Z, W, Perigo), certeza(Z, W)), L),
-						  L \= [].
+						  L \= [],
+						  retract(memory(PX, PY, Perigo)),
+						  assert(memory(PX, PY, [])).
+posicao_segura(PX, PY) :- memory(PX, PY, Perigo),
+						  \+ certeza(PX, PY), 
+						  findall((Z, W), (adjacente(PX, PY, X, Y), adjacente(X, Y, Z, W), certeza(Z, W), memory(Z, W, P), P \= []), L),
+						  forall(member(Pe, Perigo), (member((Z, W), L), memory(Z, W, [Pe]))),
+						  retract(memory(PX, PY, Perigo)),
+						  assert(memory(PX, PY, [])).
 
-posicao_vazia(X, Y) :- posicao_segura(X, Y), \+ (visitado(X, Y); posicao(X, Y, _)).
-posicao_vazia_mais_proxima(Inicio, Resultado) :- bfs([Inicio], [Inicio], Resultado).
-
-bfs([(X,Y)|_], _, (X,Y)) :- posicao_vazia(X,Y),!.
-bfs([(X,Y)|Resto], Visitados, Resultado) :- (visitado(X, Y); posicao(X,Y,_)),
-											findall((Z,W), (adjacente(X,Y,Z,W), \+ member((Z,W), Visitados)), Novos),
-    										append(Resto, Novos, NovaFila),
-    										append(Visitados, Novos, NovosVisitados),
-    										bfs(NovaFila, NovosVisitados, Resultado).  
-bfs([_|Resto], Visitados, Resultado) :- bfs(Resto, Visitados, Resultado).											
-
-fronteira(Z) :- findall((X, Y), (\+ (visitado(X, Y)), posicao_segura(X, Y)), Z).
-
-
+posicao_vazia(X, Y) :- posicao_segura(X, Y), \+ (visitado(X, Y); posicao(X, Y, _)).								
 
 posicao_valida(X, Y) :- map_size(SX, SY),
 					   	X >= 1,
 						X =< SX,
 					    Y >= 1,
 						Y =< SY.
-vizinho((X,Y), (XA, YA)) :- (XA = X + 1; XA = X - 1), Y = YA, posicao_valida(XA, YA).
-vizinho((X,Y), (XA, YA)) :- (YA = Y + 1; YA = Y - 1), X = XA, posicao_valida(XA, YA).
-
-prox_pos(X, Y, [H|(X,Y)]) :- \+ visitado(X, Y), posicao_segura(X, Y).
-prox_pos(X, Y, [H|T]) :- findall((XA, YA), vizinho((X,Y),(XA,XY)), Z).
-
-executa_acao(X) :- posicao(PX,Y,_), memory(PX,Y,[brilho]), X = 'pegar',!.
-
-
 
 posicao_a_frente(X, Y, norte, X, FY) :- FY is Y + 1,
 										posicao_valida(X, FY), !.
@@ -296,25 +308,34 @@ posicao_a_frente(X, Y, leste, FX, Y) :- FX is X + 1,
 posicao_a_frente(X, Y, oeste, FX, Y) :- FX is X - 1,
 										posicao_valida(FX, Y), !.
 
+posicao_a_frente_segura(X, Y, DIR, FX, FY) :- posicao_a_frente(X, Y, DIR, FX, FY),
+						   			  		  posicao_segura(FX, FY), !.
+
 dir_a_direita(norte, leste).
 dir_a_direita(leste, sul).
 dir_a_direita(sul, oeste).
 dir_a_direita(oeste, norte).
 
-posicao_a_frente_segura(X, Y, DIR, FX, FY) :- posicao_a_frente(X, Y, DIR, FX, FY),
-						   			  		  posicao_segura(FX, FY), !.
+executa_acao(venceu) :- tesouro(3), posicao(1, 1, _), !.
+
+executa_acao(voltar) :- tesouro(3), !.
+
+executa_acao(pegar) :- posicao(PX,Y,_), memory(PX,Y,[brilho]),!.
 
 executa_acao(andar) :- posicao(X, Y, Dir),
 					   posicao_a_frente_segura(X, Y, Dir, FX, FY),
 				   	   \+ visitado(FX, FY), !.
+
 executa_acao(virar_direita) :- posicao(X, Y, Dir),
 					   		   dir_a_direita(Dir, NDir),
 					   		   posicao_a_frente_segura(X, Y, NDir, FX, FY),
 				   	   		   \+ visitado(FX, FY), !.
+
 executa_acao(virar_esquerda) :- posicao(X, Y, Dir),
 					   		   dir_a_direita(NDir, Dir),
 					   		   posicao_a_frente_segura(X, Y, NDir, FX, FY),
 				   	   		   \+ visitado(FX, FY), !.
+
 executa_acao(virar_direita) :- posicao(X, Y, Dir),
 					   		   dir_a_direita(Dir, NDir),
 							   dir_a_direita(NDir, MDir),
@@ -335,55 +356,3 @@ go_to(PX, PY, virar_direita) :- posicao(X, Y, Dir),
 								dir_a_direita(Dir, NDir),
 								dir_a_direita(NDir, MDir),
 								posicao_a_frente(X, Y, MDir, PX, PY), !.
-
-executa_acao(X) :- posicao(PX,PY,norte),
-				   NY is PY + 1,
-				   posicao_segura(PX, NY),
-				   executa_acao(andar, X),!.
-executa_acao(X) :- posicao(PX,PY,sul),
-				   NY is PY - 1,
-				   posicao_segura(PX, NY),
-				   executa_acao(andar, X),!.
-executa_acao(X) :- posicao(PX,PY,leste),
-				   NX is PX + 1,
-				   posicao_segura(NX, PY),
-				   executa_acao(andar, X),!.
-executa_acao(X) :- posicao(PX,PY,oeste),
-				   NX is PX - 1,
-				   posicao_segura(NX, PY),
-				   executa_acao(andar, X),!.
-
-executa_acao(X) :- X = 'virar_direita',!.
-
-executa_acao(andar, X) :- posicao(PX, Y, norte),
-					   map_size(_, SY),
-					   Y < SY,
-					   X = 'andar',!.
-executa_acao(andar, X) :- posicao(PX, Y, sul),
-					   Y > 1,
-					   X = 'andar',!.
-executa_acao(andar, X) :- posicao(PX, Y, leste),
-					   	  map_size(SX, _),
-					      PX < SX,
-					      X = 'andar',!.
-executa_acao(andar, X) :- posicao(PX, Y, oeste),
-					   PX > 1,
-					   X = 'andar',!.
-
-
-%executa_acao(X) :- posicao(PX, PY, sul), memory(PX, PY, []), X = 'andar'.
-%executa_acao(X) :- posicao(PX, PY, oeste), memory(PX, PY, []), X = 'andar'.
-%executa_acao(X) :- posicao(PX, PY, leste), memory(PX, PY, []), X = 'andar'.
-
-%executa_acao(X) :- posicao(PX, PY, oeste), memory(PX - 1, PY, []), PX > 1, X = 'andar'.
-%executa_acao(X) :- X = 'andar',!.
-
-%apagar linhas abaixo... sao exemplos de resposta
-%executa_acao(andar) :- posicao(PX, PY, oeste), memory(PX - 1, PY, L), PX > 1, X = andar,!.
-%executa_acao(andar) :- posicao(PX, PY, leste), memory(PX + 1, PY, L), PX < 3, X = andar,!.
-%executa_acao(pegar) :- posicao(PX, PY,_), tem_ouro(PX, PY), !.
-%executa_acao(voltar) :- peguei_todos_ouros,!.
-
-
-
-
